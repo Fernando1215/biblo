@@ -9,7 +9,6 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,6 +26,6 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'biblopersonal' # 👈 Reemplaza con el nombre exacto de tu App Service
+          app-name: 'biblopersonal'  # 👈 Asegúrate de que coincide exactamente con tu nombre en Azure
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_9FD92B56F48042DDA5D0F7187A2A323F }}
           package: .
