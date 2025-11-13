@@ -13,6 +13,30 @@ app = FastAPI(title="Sistema Biblioteca - API RESTful")
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+from fastapi.openapi.utils import get_openapi
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title=app.title,
+        version="1.0.0",
+        routes=app.routes,
+    )
+    # quitar securitySchemes y security global
+    if "components" in openapi_schema:
+        openapi_schema["components"].pop("securitySchemes", None)
+    openapi_schema.pop("security", None)
+    # quitar security por operación
+    for path in openapi_schema.get("paths", {}).values():
+        for operation in path.values():
+            if isinstance(operation, dict):
+                operation.pop("security", None)
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
+
 
 
 # CORS (opcional, útil para frontends locales)
@@ -708,6 +732,7 @@ if __name__ == "__main__":
     import uvicorn
     puerto = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=puerto)
+
 
 
 
