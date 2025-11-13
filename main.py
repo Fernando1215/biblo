@@ -10,6 +10,10 @@ import os
 
 app = FastAPI(title="Sistema Biblioteca - API RESTful")
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 
 # CORS (opcional, útil para frontends locales)
 app.add_middleware(
@@ -704,6 +708,7 @@ if __name__ == "__main__":
     import uvicorn
     puerto = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=puerto)
+
 
 
 
