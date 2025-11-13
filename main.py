@@ -9,6 +9,10 @@ import hashlib
 import os
 
 app = FastAPI(title="Sistema Biblioteca - API RESTful")
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 
 # CORS (opcional, útil para frontends locales)
 app.add_middleware(
@@ -696,11 +700,6 @@ def quitar_de_mi_biblioteca(libro_id: int, user=Depends(get_current_user)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Libro no está en tu biblioteca")
     user["biblioteca"].remove(libro_id)
     return {"message": "Libro eliminado"}
-    @app.get("/health")
-def health_check():
-    return {"status": "ok"}
-
-
 # ---------------------------
 # == Run
 # ---------------------------
@@ -708,4 +707,5 @@ if __name__ == "__main__":
     import uvicorn
     puerto = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=puerto)
+
 
