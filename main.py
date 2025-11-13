@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, status, Depends, Header
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional, Dict, Any[notice] A new release of pip is available: 25.2 -> 25.3
+from typing import List, Optional, Dict, Any
 import secrets
 import hashlib
 import os
@@ -708,6 +708,7 @@ if __name__ == "__main__":
     import uvicorn
     puerto = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=puerto)
+
 
 
 
