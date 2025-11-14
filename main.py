@@ -778,12 +778,23 @@ def crear_reseña(libro_id: int, payload: ReviewCreate, user=Depends(get_current
 
 # Usuarios y Auth (usando facade donde aplica)
 @app.post("/api/v1/usuarios", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def registrar_usuario(payload: UserCreate, current: Optional[Dict[str, Any]] = None):
-    # Nota: comportamiento simple: si quieres que solo admin pueda crear admin, valida aquí.
+def registrar_usuario(payload: UserCreate):
     if _get_user_by_email(payload.email):
         raise HTTPException(status_code=409, detail="Email ya registrado")
-    user = facade.register_user(payload.nombre, payload.email, _hash_password(payload.clave), payload.rol)
-    return {"id": user["id"], "nombre": user["nombre"], "email": user["email"], "rol": user["rol"]}
+
+    user = facade.register_user(
+        payload.nombre,
+        payload.email.strip().lower(),
+        _hash_password(payload.clave),
+        payload.rol
+    )
+
+    return {
+        "id": user["id"],
+        "nombre": user["nombre"],
+        "email": user["email"],
+        "rol": user["rol"]
+    }
 
 @app.post("/api/v1/auth/login")
 def login(payload: LoginInput):
