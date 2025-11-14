@@ -26,7 +26,7 @@ app.add_middleware(
 # ---------------------------
 # Contadores e "BD" en memoria
 # ---------------------------
-_next_book_id = 6
+_next_book_id = 6  # Empieza en 6 porque ya hay 5 libros iniciales en tu diseño original
 _next_user_id = 1
 
 def next_book_id() -> int:
@@ -44,33 +44,58 @@ def next_user_id() -> int:
 STORES = {
     "books": [],
     "users": [],
-    "reviews": {},
-    "tokens": {},
+    "reviews": {},   # key: book_id (str) -> list of reviews
+    "tokens": {},    # token -> user_id
 }
 
-# Libros iniciales
+# Libros iniciales (tal como tenías)
 initial_books = [
-    {"titulo": "Cien Años de Soledad", "autor": "Gabriel García Márquez", "categoria": "Novela", "contenido": "Contenido..."},
-    {"titulo": "El libro troll", "autor": "el rubius", "categoria": "Historico", "contenido": "Contenido..."},
-    {"titulo": "1984", "autor": "George Orwell", "categoria": "Distopía", "contenido": "Contenido..."},
-    {"titulo": "Don Quijote de la Mancha", "autor": "Miguel de Cervantes", "categoria": "Clásico", "contenido": "Contenido..."},
-    {"titulo": "La Odisea", "autor": "Homero", "categoria": "Épica", "contenido": "Contenido..."},
+    {
+        "titulo": "Cien Años de Soledad",
+        "autor": "Gabriel García Márquez",
+        "categoria": "Novela",
+        "contenido": "Contenido del libro Cien Años de Soledad..."
+    },
+    {
+        "titulo": "El libro troll",
+        "autor": "el rubius",
+        "categoria": "Historico",
+        "contenido": "Contenido del libro troll..."
+    },
+    {
+        "titulo": "1984",
+        "autor": "George Orwell",
+        "categoria": "Distopía",
+        "contenido": "Contenido del libro 1984..."
+    },
+    {
+        "titulo": "Don Quijote de la Mancha",
+        "autor": "Miguel de Cervantes",
+        "categoria": "Clásico",
+        "contenido": "Contenido del Quijote..."
+    },
+    {
+        "titulo": "La Odisea",
+        "autor": "Homero",
+        "categoria": "Épica",
+        "contenido": "Contenido de La Odisea..."
+    },
 ]
 
+# Insertar los libros en la BD en memoria
 for i, b in enumerate(initial_books, start=1):
     STORES["books"].append({
         "id": i,
         "titulo": b["titulo"],
         "autor": b["autor"],
         "categoria": b["categoria"],
-        "contenido": b["contenido"]
     })
+# Ajustar el contador de libros 
 if len(STORES["books"]) >= _next_book_id:
     _next_book_id = len(STORES["books"]) + 1
 
 # ---------------------------
 # Schemas (Pydantic)
-# ---------------------------
 class BookCreate(BaseModel):
     titulo: str
     autor: str
@@ -89,6 +114,7 @@ class BookOut(BaseModel):
     autor: str
     categoria: str
     contenido: str
+
 
 class UserCreate(BaseModel):
     nombre: str = Field(..., min_length=1)
@@ -142,29 +168,31 @@ class LogObserver(ObserverBase):
 
 class EmailObserver(ObserverBase):
     def update(self, event: str, data: Dict[str, Any]):
+        # Simulación de envío de correo (o push). En prod, aquí llamas a un servicio real.
         print(f"[EMAIL] Notificación ({event}) enviada con payload: {data}")
 
+# Instancia global de eventos y observers
 event_subject = EventSubject()
 event_subject.subscribe(LogObserver())
 event_subject.subscribe(EmailObserver())
 
-# ---------------------------
-# Facade
-# ---------------------------
+# Facade: simplifica operaciones sobre la "BD"
 class LibraryFacade:
     def __init__(self, store: Dict[str, Any], events: EventSubject):
         self.store = store
         self.events = events
 
-    def add_book(self, titulo: str, autor: str, categoria: str, contenido: str) -> Dict[str, Any]:
+    # Libros
+    def add_book(self, titulo: str, autor: str, categoria: str) -> Dict[str, Any]:
         book = {
             "id": next_book_id(),
             "titulo": titulo,
             "autor": autor,
             "categoria": categoria,
-            "contenido": contenido
+             "contenido": contenido
         }
         self.store["books"].append(book)
+        # Notificar evento
         self.events.notify("LIBRO_CREADO", book)
         return book
 
@@ -177,8 +205,8 @@ class LibraryFacade:
                     b["autor"] = changes["autor"]
                 if changes.get("categoria") is not None:
                     b["categoria"] = changes["categoria"]
-                if changes.get("contenido") is not None:
-                    b["contenido"] = changes["contenido"]
+                    if changes.get("contenido") is not None:
+                      b["contenido"] = changes["contenido"]
                 self.events.notify("LIBRO_ACTUALIZADO", b)
                 return b
         return None
@@ -187,6 +215,7 @@ class LibraryFacade:
         for i, b in enumerate(self.store["books"]):
             if b["id"] == libro_id:
                 removed = self.store["books"].pop(i)
+                # eliminar reseñas asociadas
                 self.store["reviews"].pop(str(libro_id), None)
                 self.events.notify("LIBRO_ELIMINADO", removed)
                 return True
@@ -204,6 +233,7 @@ class LibraryFacade:
             items = [b for b in items if q in b["titulo"].lower() or q in b["autor"].lower()]
         return items
 
+    # Reseñas
     def add_review(self, libro_id: int, usuario_id: int, texto: str, cal: int) -> Dict[str, Any]:
         key = str(libro_id)
         rec = {"usuario_id": usuario_id, "texto": texto, "cal": cal}
@@ -211,6 +241,7 @@ class LibraryFacade:
         self.events.notify("RESEÑA_AGREGADA", {"libro_id": libro_id, **rec})
         return rec
 
+    # Usuarios
     def register_user(self, nombre: str, email: str, password_hash: str, rol: str = "usuario") -> Dict[str, Any]:
         user = {
             "id": next_user_id(),
@@ -232,8 +263,11 @@ class LibraryFacade:
             return None
         return user
 
+# Instancia de la fachada
+facade = LibraryFacade(STORES, event_subject)
+
 # ---------------------------
-# Seguridad / Auth
+# Utilidades de seguridad / auth
 # ---------------------------
 def _hash_password(clave: str) -> str:
     return hashlib.sha256(clave.encode("utf-8")).hexdigest()
@@ -256,21 +290,19 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 def admin_required(user: dict):
     if user.get("rol") != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo administradores pueden realizar esta acción")
-
-# Admin por defecto
+    
 admin_default = {
     "id": next_user_id(),
     "nombre": "Administrador",
     "email": "admin@biblioteca.com",
-    "password_hash": _hash_password("admin123"),
+    "password_hash": _hash_password("admin123"),  # contraseña por defecto
     "rol": "admin",
     "biblioteca": []
 }
-STORES["users"].append(admin_default)
-print("🟢 Usuario administrador creado -> admin@biblioteca.com / admin123")
 
-# Instancia de la fachada
-facade = LibraryFacade(STORES, event_subject)
+STORES["users"].append(admin_default)
+print("🟢 Usuario administrador creado por defecto -> admin@biblioteca.com / admin123")
+
 # ---------------------------
 # HTML frontend (mantuve tu versión + llamadas a /api/v1)
 # ---------------------------
