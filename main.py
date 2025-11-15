@@ -50,36 +50,11 @@ STORES = {
 
 # Libros iniciales (tal como tenías)
 initial_books = [
-    {
-        "titulo": "Cien Años de Soledad",
-        "autor": "Gabriel García Márquez",
-        "categoria": "Novela",
-        "contenido": "Contenido del libro Cien Años de Soledad..."
-    },
-    {
-        "titulo": "El libro troll",
-        "autor": "el rubius",
-        "categoria": "Historico",
-        "contenido": "Contenido del libro troll..."
-    },
-    {
-        "titulo": "1984",
-        "autor": "George Orwell",
-        "categoria": "Distopía",
-        "contenido": "Contenido del libro 1984..."
-    },
-    {
-        "titulo": "Don Quijote de la Mancha",
-        "autor": "Miguel de Cervantes",
-        "categoria": "Clásico",
-        "contenido": "Contenido del Quijote..."
-    },
-    {
-        "titulo": "La Odisea",
-        "autor": "Homero",
-        "categoria": "Épica",
-        "contenido": "Contenido de La Odisea..."
-    },
+    {"titulo": "Cien Años de Soledad", "autor": "Gabriel García Márquez", "categoria": "Novela"},
+    {"titulo": "El libro troll", "autor": "el rubius", "categoria": "Historico"},
+    {"titulo": "1984", "autor": "George Orwell", "categoria": "Distopía"},
+    {"titulo": "Don Quijote de la Mancha", "autor": "Miguel de Cervantes", "categoria": "Clásico"},
+    {"titulo": "La Odisea", "autor": "Homero", "categoria": "Épica"},
 ]
 
 # Insertar los libros en la BD en memoria
@@ -97,24 +72,20 @@ if len(STORES["books"]) >= _next_book_id:
 # ---------------------------
 # Schemas (Pydantic)
 class BookCreate(BaseModel):
-    titulo: str
-    autor: str
-    categoria: str
-    contenido: str
+    titulo: str = Field(..., min_length=1)
+    autor: str = Field(..., min_length=1)
+    categoria: str = Field(..., min_length=1)
 
 class BookUpdate(BaseModel):
     titulo: Optional[str] = None
     autor: Optional[str] = None
     categoria: Optional[str] = None
-    contenido: Optional[str] = None
 
 class BookOut(BaseModel):
     id: int
     titulo: str
     autor: str
     categoria: str
-    contenido: str
-
 
 class UserCreate(BaseModel):
     nombre: str = Field(..., min_length=1)
@@ -188,8 +159,7 @@ class LibraryFacade:
             "id": next_book_id(),
             "titulo": titulo,
             "autor": autor,
-            "categoria": categoria,
-             "contenido": contenido
+            "categoria": categoria
         }
         self.store["books"].append(book)
         # Notificar evento
@@ -205,8 +175,6 @@ class LibraryFacade:
                     b["autor"] = changes["autor"]
                 if changes.get("categoria") is not None:
                     b["categoria"] = changes["categoria"]
-                    if changes.get("contenido") is not None:
-                      b["contenido"] = changes["contenido"]
                 self.events.notify("LIBRO_ACTUALIZADO", b)
                 return b
         return None
@@ -769,7 +737,7 @@ def listar_libros(page: int = 1, limit: int = 20, categoria: Optional[str] = Non
 @app.post("/api/v1/libros", response_model=BookOut, status_code=status.HTTP_201_CREATED)
 def crear_libro(data: BookCreate, user=Depends(get_current_user)):
     admin_required(user)
-    book = facade.add_book(data.titulo, data.autor, data.categoria,data.contenido)
+    book = facade.add_book(data.titulo, data.autor, data.categoria)
     return book
 
 @app.get("/api/v1/libros/{libro_id}", response_model=BookOut)
@@ -787,12 +755,7 @@ def actualizar_libro(libro_id: int, payload: BookUpdate, user=Depends(get_curren
     if not updated:
         raise HTTPException(status_code=404, detail="Libro no encontrado")
     return updated
-@app.get("/api/v1/libros/{libro_id}/leer")
-def leer_libro(libro_id: int):
-    libro = facade.get_book(libro_id)
-    if not libro:
-        raise HTTPException(status_code=404, detail="Libro no encontrado")
-    return {"titulo": libro["titulo"], "contenido": libro["contenido"]}
+
 @app.delete("/api/v1/libros/{libro_id}", status_code=status.HTTP_204_NO_CONTENT)
 def eliminar_libro(libro_id: int, user=Depends(get_current_user)):
     admin_required(user)
