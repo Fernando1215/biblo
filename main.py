@@ -11,7 +11,6 @@ import os
 
 # ---------------------------
 # Configuración básica
-# ---------------------------
 security = HTTPBearer()
 app = FastAPI(title="Sistema Biblioteca - API RESTful")
 
@@ -25,7 +24,6 @@ app.add_middleware(
 
 # ---------------------------
 # Contadores e "BD" en memoria
-# ---------------------------
 _next_book_id = 6  # Empieza en 6 porque ya hay 5 libros iniciales en tu diseño original
 _next_user_id = 1
 
@@ -48,13 +46,53 @@ STORES = {
     "tokens": {},    # token -> user_id
 }
 
-# Libros iniciales (tal como tenías)
+# Libros iniciales con contenido simulado
 initial_books = [
-    {"titulo": "Cien Años de Soledad", "autor": "Gabriel García Márquez", "categoria": "Novela"},
-    {"titulo": "El libro troll", "autor": "el rubius", "categoria": "Historico"},
-    {"titulo": "1984", "autor": "George Orwell", "categoria": "Distopía"},
-    {"titulo": "Don Quijote de la Mancha", "autor": "Miguel de Cervantes", "categoria": "Clásico"},
-    {"titulo": "La Odisea", "autor": "Homero", "categoria": "Épica"},
+    {
+        "titulo": "Cien Años de Soledad",
+        "autor": "Gabriel García Márquez",
+        "categoria": "Novela",
+        "contenido": (
+            "Capítulo 1: Mucho antes de que naciera Aureliano Buendía, la aldea de Macondo "
+            "se había fundado cerca de un río. Aquí comienzan las historias y los mitos..."
+        )
+    },
+    {
+        "titulo": "El libro troll",
+        "autor": "el rubius",
+        "categoria": "Histórico",
+        "contenido": (
+            "Capítulo 1: Un narrador inesperado cuenta las peripecias de un personaje que "
+            "se mete en problemas aunque no lo busca..."
+        )
+    },
+    {
+        "titulo": "1984",
+        "autor": "George Orwell",
+        "categoria": "Distopía",
+        "contenido": (
+            "Capítulo 1: Winston trabaja vigilando hechos históricos. El gobierno controla "
+            "hasta el lenguaje. Aquí comienza su despertar..."
+        )
+    },
+    {
+        "titulo": "Don Quijote de la Mancha",
+        "autor": "Miguel de Cervantes",
+        "categoria": "Clásico",
+        "contenido": (
+            "Capítulo 1: Alonso Quijano pierde el juicio por leer demasiados libros de caballería "
+            "y decide convertirse en caballero andante..."
+        )
+    },
+    {
+        "titulo": "La Odisea",
+        "autor": "Homero",
+        "categoria": "Épica",
+        "contenido": (
+            "Canto 1: Odiseo trata de regresar a Ítaca. Encuentros con dioses, monstruos y pruebas "
+            "marcan su camino..."
+        )
+    },
 ]
 
 # Insertar los libros en la BD en memoria
@@ -64,7 +102,9 @@ for i, b in enumerate(initial_books, start=1):
         "titulo": b["titulo"],
         "autor": b["autor"],
         "categoria": b["categoria"],
+        "contenido": b.get("contenido", "")
     })
+
 # Ajustar el contador de libros 
 if len(STORES["books"]) >= _next_book_id:
     _next_book_id = len(STORES["books"]) + 1
@@ -75,17 +115,20 @@ class BookCreate(BaseModel):
     titulo: str = Field(..., min_length=1)
     autor: str = Field(..., min_length=1)
     categoria: str = Field(..., min_length=1)
+    contenido: Optional[str] = ""  # opcional, puede enviarse al crear
 
 class BookUpdate(BaseModel):
     titulo: Optional[str] = None
     autor: Optional[str] = None
     categoria: Optional[str] = None
+    contenido: Optional[str] = None
 
 class BookOut(BaseModel):
     id: int
     titulo: str
     autor: str
     categoria: str
+    contenido: Optional[str] = ""  # retorno con contenido para detalle/lista
 
 class UserCreate(BaseModel):
     nombre: str = Field(..., min_length=1)
@@ -114,7 +157,6 @@ class ReviewOut(BaseModel):
 
 # ---------------------------
 # Observer (Subject / Observers)
-# ---------------------------
 class EventSubject:
     def __init__(self):
         self._observers: List[Any] = []
@@ -154,12 +196,13 @@ class LibraryFacade:
         self.events = events
 
     # Libros
-    def add_book(self, titulo: str, autor: str, categoria: str) -> Dict[str, Any]:
+    def add_book(self, titulo: str, autor: str, categoria: str, contenido: str = "") -> Dict[str, Any]:
         book = {
             "id": next_book_id(),
             "titulo": titulo,
             "autor": autor,
-            "categoria": categoria
+            "categoria": categoria,
+            "contenido": contenido or ""
         }
         self.store["books"].append(book)
         # Notificar evento
@@ -175,6 +218,9 @@ class LibraryFacade:
                     b["autor"] = changes["autor"]
                 if changes.get("categoria") is not None:
                     b["categoria"] = changes["categoria"]
+                # contenido también puede actualizarse
+                if changes.get("contenido") is not None:
+                    b["contenido"] = changes["contenido"]
                 self.events.notify("LIBRO_ACTUALIZADO", b)
                 return b
         return None
@@ -193,12 +239,12 @@ class LibraryFacade:
         return next((b for b in self.store["books"] if b["id"] == libro_id), None)
 
     def list_books(self, categoria: Optional[str] = None, search: Optional[str] = None) -> List[Dict[str, Any]]:
-        items = self.store["books"].copy()
+        items = [b.copy() for b in self.store["books"]]
         if categoria:
             items = [b for b in items if b["categoria"].lower() == categoria.lower()]
         if search:
             q = search.lower()
-            items = [b for b in items if q in b["titulo"].lower() or q in b["autor"].lower()]
+            items = [b for b in items if q in (b.get("titulo","").lower()) or q in (b.get("autor","").lower())]
         return items
 
     # Reseñas
@@ -236,7 +282,6 @@ facade = LibraryFacade(STORES, event_subject)
 
 # ---------------------------
 # Utilidades de seguridad / auth
-# ---------------------------
 def _hash_password(clave: str) -> str:
     return hashlib.sha256(clave.encode("utf-8")).hexdigest()
 
@@ -259,6 +304,7 @@ def admin_required(user: dict):
     if user.get("rol") != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo administradores pueden realizar esta acción")
     
+# Crear admin por defecto (siempre)
 admin_default = {
     "id": next_user_id(),
     "nombre": "Administrador",
@@ -271,76 +317,28 @@ admin_default = {
 STORES["users"].append(admin_default)
 print("🟢 Usuario administrador creado por defecto -> admin@biblioteca.com / admin123")
 
-# ---------------------------
-# HTML frontend (mantuve tu versión + llamadas a /api/v1)
-# ---------------------------
-HTML_PAGE = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Biblioteca Personal</title>
+  <title>Biblioteca Personal - Leer contenidos</title>
   <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      background-color: #f5f1e9;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      min-height: 100vh;
-      padding-top: 30px;
-    }
-    .container {
-      background: #fffdfa;
-      max-width: 700px;
-      width: 90%;
-      padding: 25px 35px;
-      border-radius: 12px;
-      box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-    }
-    h1, h2, h3 { color: #3a4d24; }
-    input, textarea, button {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: 2px solid #9caf88;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-    button {
-      background-color: #4caf50;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    button:hover { background-color: #388e3c; }
-    #panelUsuario, #detalleLibro, #registro { display: none; margin-top: 20px; }
-    .libro-item {
-      padding: 15px;
-      margin: 8px 0;
-      background-color: #e7ebd1;
-      border: 2px solid #b6c78a;
-      border-radius: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .libro-item:hover { background-color: #d4dbb4; }
-    .btn-small {
-      width: auto;
-      padding: 7px 12px;
-      margin-left: 5px;
-      font-size: 14px;
-    }
-    #cerrarSesion {
-      background-color: #a44c4c;
-      max-width: 150px;
-      margin: 20px auto;
-      display: none;
-    }
+    body { font-family: 'Arial', sans-serif; background-color: #f5f1e9; margin:0; padding:0; display:flex; justify-content:center; min-height:100vh; padding-top:30px }
+    .container { background:#fffdfa; max-width:900px; width:95%; padding:20px 28px; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,0.08) }
+    h1,h2,h3{ color:#2f4a1f }
+    input, textarea, button, select { width:100%; padding:10px; margin:8px 0; border-radius:8px; border:2px solid #9caf88; font-size:15px; box-sizing:border-box }
+    textarea { min-height:120px; resize:vertical }
+    button { background:#4caf50; color:#fff; border:none; cursor:pointer; font-weight:700 }
+    button:hover{ background:#388e3c }
+    .libro-item{ padding:12px; margin:8px 0; background:#e7ebd1; border:2px solid #b6c78a; border-radius:8px; display:flex; justify-content:space-between; align-items:center }
+    .btn-small{ width:auto; padding:6px 10px; margin-left:6px; font-size:13px }
+    #panelUsuario, #detalleLibro, #registro { display:none }
+    #cerrarSesion { background:#a44c4c; max-width:150px; margin:14px auto; display:none }
+    .content-area{ white-space:pre-wrap; background:#fff; padding:12px; border-radius:8px; border:1px solid #e0e0e0; max-height:300px; overflow:auto }
+    .row { display:flex; gap:12px }
+    .col { flex:1 }
+    .hidden { display:none }
   </style>
 </head>
 <body>
@@ -365,28 +363,49 @@ HTML_PAGE = """<!DOCTYPE html>
     </div>
 
     <div id="panelUsuario">
-      <h2>Catálogo Global</h2>
-      <div id="catalogoGlobal"></div>
+      <div class="row">
+        <div class="col">
+          <h2>Catálogo Global</h2>
+          <div id="catalogoGlobal"></div>
+        </div>
+        <div class="col">
+          <h2>Mi Biblioteca</h2>
+          <div id="miBiblioteca"></div>
 
-      <h2>Mi Biblioteca</h2>
-      <div id="miBiblioteca"></div>
+          <h2>Buscar</h2>
+          <input id="qSearch" placeholder="Buscar por título o autor" oninput="buscar()" />
+        </div>
+      </div>
 
-      <h2>Agregar Nuevo Libro</h2>
+      <h2 id="hAgregar">Agregar Nuevo Libro</h2>
       <input type="text" id="nuevoTitulo" placeholder="Título" />
       <input type="text" id="nuevoAutor" placeholder="Autor" />
       <input type="text" id="nuevaCategoria" placeholder="Categoría" />
-      <button onclick="agregarLibro()">Agregar Libro</button>
+      <textarea id="nuevoContenido" placeholder="Contenido del libro (simulado). Puedes escribir varios párrafos."></textarea>
+      <button onclick="agregarLibro()" id="btnAgregar">Agregar Libro</button>
     </div>
 
     <div id="detalleLibro">
       <h3 id="tituloDetalle"></h3>
       <p id="autorDetalle"></p>
       <p id="categoriaDetalle"></p>
+
+      <h4>Contenido</h4>
+      <div id="contenidoTexto" class="content-area">(Cargando...)</div>
+
+      <div id="edicionAdmin" class="hidden">
+        <h4>Editar contenido (Admin)</h4>
+        <textarea id="contenidoEditar" placeholder="Edita el contenido aquí"></textarea>
+        <button onclick="guardarContenido()">Guardar contenido</button>
+      </div>
+
+      <h4>Reseñas:</h4>
+      <ul id="listaReseñas"></ul>
+
       <textarea id="reseñaTexto" placeholder="Escribe tu reseña..."></textarea>
       <input type="number" id="calificacion" min="1" max="5" placeholder="Calificación (1-5)" />
       <button onclick="guardarReseña()">Guardar Reseña</button>
-      <h4>Reseñas:</h4>
-      <ul id="listaReseñas"></ul>
+
       <button onclick="cerrarDetalle()">Cerrar</button>
     </div>
 
@@ -395,22 +414,16 @@ HTML_PAGE = """<!DOCTYPE html>
 
   <script>
     let token = null;
-    let userRole = null;  // ← Guardamos el rol del usuario
+    let userRole = null;
     let libroSeleccionado = null;
-    let misBibliotecaIds = [];
 
     const API = '/api/v1';
 
     async function request(url, options = {}) {
-      if (token && !options.headers) {
-        options.headers = {};
-      }
-      if (token) {
-        options.headers['Authorization'] = `Bearer ${token}`;
-      }
       options.headers = options.headers || {};
-      options.headers['Content-Type'] = 'application/json';
-      
+      if (token) options.headers['Authorization'] = `Bearer ${token}`;
+      if (!options.headers['Content-Type'] && !(options.body instanceof FormData)) options.headers['Content-Type'] = 'application/json';
+
       const res = await fetch(url, options);
       if (!res.ok) {
         const error = await res.json().catch(() => ({detail: 'Error desconocido'}));
@@ -422,32 +435,30 @@ HTML_PAGE = """<!DOCTYPE html>
     async function login() {
       const email = document.getElementById('loginEmail').value.trim();
       const clave = document.getElementById('loginClave').value;
-      
       try {
-        const data = await request(`${API}/auth/login`, {
-          method: 'POST',
-          body: JSON.stringify({email, clave})
-        });
-        
+        const data = await request(`${API}/auth/login`, { method: 'POST', body: JSON.stringify({ email, clave }) });
         token = data.token;
-        userRole = data.rol;  // ← Guardamos el rol
-        
+        userRole = data.rol;
+
         document.getElementById('login').style.display = 'none';
         document.getElementById('panelUsuario').style.display = 'block';
         document.getElementById('cerrarSesion').style.display = 'block';
-        
-        // Mostrar u ocultar sección de agregar libros según el rol
-        const agregarLibroSection = document.querySelector('#panelUsuario h2:nth-of-type(3)').parentElement.querySelectorAll('h2:nth-of-type(3), #nuevoTitulo, #nuevoAutor, #nuevaCategoria, button:last-of-type');
+
+        // Ajustes según rol
         if (userRole === 'admin') {
           alert('✅ Bienvenido Administrador');
+          document.getElementById('hAgregar').style.display = 'block';
+          document.getElementById('btnAgregar').style.display = 'block';
         } else {
-          // Ocultar formulario de agregar libros para usuarios normales
-          document.querySelectorAll('#panelUsuario > h2:nth-of-type(3), #nuevoTitulo, #nuevoAutor, #nuevaCategoria, #panelUsuario > button:last-of-type').forEach(el => {
-            el.style.display = 'none';
-          });
           alert('✅ Bienvenido Usuario');
+          document.getElementById('hAgregar').style.display = 'none';
+          document.getElementById('btnAgregar').style.display = 'none';
+          document.getElementById('nuevoTitulo').style.display = 'none';
+          document.getElementById('nuevoAutor').style.display = 'none';
+          document.getElementById('nuevaCategoria').style.display = 'none';
+          document.getElementById('nuevoContenido').style.display = 'none';
         }
-        
+
         await cargarCatalogo();
         await cargarMiBiblioteca();
       } catch (err) {
@@ -455,269 +466,161 @@ HTML_PAGE = """<!DOCTYPE html>
       }
     }
 
-    function mostrarRegistro() {
-      document.getElementById('login').style.display = 'none';
-      document.getElementById('registro').style.display = 'block';
-    }
-
-    function volverLogin() {
-      document.getElementById('registro').style.display = 'none';
-      document.getElementById('login').style.display = 'block';
-    }
+    function mostrarRegistro() { document.getElementById('login').style.display = 'none'; document.getElementById('registro').style.display = 'block'; }
+    function volverLogin() { document.getElementById('registro').style.display = 'none'; document.getElementById('login').style.display = 'block'; }
 
     async function registrarUsuario() {
       const nombre = document.getElementById('regNombre').value.trim();
       const email = document.getElementById('regEmail').value.trim();
       const clave = document.getElementById('regClave').value;
-      
       try {
-        await request(`${API}/usuarios`, {
-          method: 'POST',
-          body: JSON.stringify({nombre, email, clave, rol: 'usuario'})
-        });
-        
-        alert('Usuario registrado exitosamente');
-        volverLogin();
-      } catch (err) {
-        alert('Error al registrar: ' + err.message);
-      }
+        await request(`${API}/usuarios`, { method: 'POST', body: JSON.stringify({ nombre, email, clave, rol: 'usuario' }) });
+        alert('Usuario registrado con éxito'); volverLogin();
+      } catch (err) { alert('Error al registrar: ' + err.message); }
     }
 
     function logout() {
-      token = null;
-      userRole = null;  // ← Limpiar rol
+      token = null; userRole = null; libroSeleccionado = null;
       document.getElementById('login').style.display = 'block';
       document.getElementById('panelUsuario').style.display = 'none';
       document.getElementById('cerrarSesion').style.display = 'none';
-      document.getElementById('loginEmail').value = '';
-      document.getElementById('loginClave').value = '';
-      
-      // Mostrar de nuevo el formulario de agregar libros (para próximo login)
-      document.querySelectorAll('#panelUsuario > h2:nth-of-type(3), #nuevoTitulo, #nuevoAutor, #nuevaCategoria, #panelUsuario > button:last-of-type').forEach(el => {
-        el.style.display = 'block';
-      });
+      // mostrar campos agregar
+      document.getElementById('hAgregar').style.display = 'block';
+      document.getElementById('btnAgregar').style.display = 'block';
+      document.getElementById('nuevoTitulo').style.display = 'block';
+      document.getElementById('nuevoAutor').style.display = 'block';
+      document.getElementById('nuevaCategoria').style.display = 'block';
+      document.getElementById('nuevoContenido').style.display = 'block';
     }
 
-    async function cargarCatalogo() {
+    async function cargarCatalogo(q) {
       try {
-        const libros = await request(`${API}/libros`);
-        const cont = document.getElementById('catalogoGlobal');
-        cont.innerHTML = '';
-        
+        const url = `${API}/libros${q ? '?search=' + encodeURIComponent(q) : ''}`;
+        const libros = await request(url);
+        const cont = document.getElementById('catalogoGlobal'); cont.innerHTML = '';
         libros.forEach(libro => {
-          const div = document.createElement('div');
-          div.className = 'libro-item';
-          
-          // Botones según el rol del usuario
+          const div = document.createElement('div'); div.className = 'libro-item';
           let botonesHTML = `
             <button class="btn-small" onclick="agregarAMiBiblioteca(${libro.id})">Agregar</button>
-            <button class="btn-small" onclick="verDetalle(${libro.id})">Ver</button>
+            <button class="btn-small" onclick="verDetalle(${libro.id})">Leer</button>
           `;
-          
-          // Solo admin puede editar y eliminar
           if (userRole === 'admin') {
-            botonesHTML += `
-              <button class="btn-small" onclick="editarLibro(${libro.id})" style="background-color: #ff9800;">Editar</button>
-              <button class="btn-small" onclick="eliminarLibro(${libro.id})" style="background-color: #f44336;">Eliminar</button>
-            `;
+            botonesHTML += ` <button class="btn-small" onclick="editarLibro(${libro.id})" style="background-color:#ff9800">Editar</button> <button class="btn-small" onclick="eliminarLibro(${libro.id})" style="background-color:#f44336">Eliminar</button> `;
           }
-          
-          div.innerHTML = `
-            <div><strong>${libro.titulo}</strong> - ${libro.autor} (${libro.categoria})</div>
-            <div>${botonesHTML}</div>
-          `;
+          div.innerHTML = `<div><strong>${libro.titulo}</strong> - ${libro.autor} (${libro.categoria})</div><div>${botonesHTML}</div>`;
           cont.appendChild(div);
         });
-      } catch (err) {
-        alert('Error al cargar catálogo: ' + err.message);
-      }
+      } catch (err) { alert('Error al cargar catálogo: ' + err.message); }
     }
+
+    function buscar() { const q = document.getElementById('qSearch').value.trim(); cargarCatalogo(q); }
 
     async function cargarMiBiblioteca() {
       try {
         const libros = await request(`${API}/usuarios/me/biblioteca`);
-        const cont = document.getElementById('miBiblioteca');
-        cont.innerHTML = '';
-        
-        if (libros.length === 0) {
-          cont.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">📚 Tu biblioteca está vacía. Agrega libros desde el catálogo global.</p>';
-          return;
-        }
-        
+        const cont = document.getElementById('miBiblioteca'); cont.innerHTML = '';
+        if (libros.length === 0) { cont.innerHTML = '<p style="text-align:center;color:#999;padding:20px">📚 Tu biblioteca está vacía.</p>'; return; }
         libros.forEach(libro => {
-          const div = document.createElement('div');
-          div.className = 'libro-item';
-          div.innerHTML = `
-            <div><strong>${libro.titulo}</strong> - ${libro.autor} (${libro.categoria})</div>
-            <div>
-              <button class="btn-small" onclick="verDetalle(${libro.id})">Ver detalle</button>
-              <button class="btn-small" onclick="quitarDeMiBiblioteca(${libro.id})" style="background-color: #f44336;">Quitar</button>
-            </div>
-          `;
+          const div = document.createElement('div'); div.className = 'libro-item';
+          div.innerHTML = `<div><strong>${libro.titulo}</strong> - ${libro.autor} (${libro.categoria})</div><div><button class="btn-small" onclick="verDetalle(${libro.id})">Leer</button><button class="btn-small" onclick="quitarDeMiBiblioteca(${libro.id})" style="background-color:#f44336">Quitar</button></div>`;
           cont.appendChild(div);
         });
-      } catch (err) {
-        const cont = document.getElementById('miBiblioteca');
-        cont.innerHTML = '<p style="color: #f44336;">Error al cargar tu biblioteca: ' + err.message + '</p>';
-      }
+      } catch (err) { document.getElementById('miBiblioteca').innerHTML = '<p style="color:#f44336">Error: '+err.message+'</p>'; }
     }
 
     async function agregarLibro() {
       const titulo = document.getElementById('nuevoTitulo').value.trim();
       const autor = document.getElementById('nuevoAutor').value.trim();
       const categoria = document.getElementById('nuevaCategoria').value.trim();
-      
-      if (!titulo || !autor || !categoria) {
-        alert('Completa todos los campos');
-        return;
-      }
-      
+      const contenido = document.getElementById('nuevoContenido').value.trim();
+      if (!titulo || !autor || !categoria) { alert('Completa todos los campos'); return; }
       try {
-        await request(`${API}/libros`, {
-          method: 'POST',
-          body: JSON.stringify({titulo, autor, categoria})
-        });
-        
-        document.getElementById('nuevoTitulo').value = '';
-        document.getElementById('nuevoAutor').value = '';
-        document.getElementById('nuevaCategoria').value = '';
-        
+        await request(`${API}/libros`, { method: 'POST', body: JSON.stringify({ titulo, autor, categoria, contenido }) });
+        document.getElementById('nuevoTitulo').value=''; document.getElementById('nuevoAutor').value=''; document.getElementById('nuevaCategoria').value=''; document.getElementById('nuevoContenido').value='';
         await cargarCatalogo();
       } catch (err) {
-        if (err.message.includes('Solo administradores')) {
-          alert('❌ Solo los administradores pueden crear libros');
-        } else {
-          alert('Error al agregar libro: ' + err.message);
-        }
+        if (err.message.includes('Solo administradores')) alert('❌ Solo administradores pueden crear libros'); else alert('Error al agregar libro: '+err.message);
       }
     }
 
     async function agregarAMiBiblioteca(libroId) {
-      try {
-        await request(`${API}/usuarios/me/biblioteca/${libroId}`, {
-          method: 'POST'
-        });
-        alert('Libro agregado a tu biblioteca');
-        await cargarMiBiblioteca();
-      } catch (err) {
-        alert('Error: ' + err.message);
-      }
+      try { await request(`${API}/usuarios/me/biblioteca/${libroId}`, { method: 'POST' }); alert('Libro agregado a tu biblioteca'); await cargarMiBiblioteca(); } catch (err) { alert('Error: '+err.message); }
     }
+
     async function quitarDeMiBiblioteca(libroId) {
       if (!confirm('¿Seguro que deseas quitar este libro de tu biblioteca?')) return;
-
-    try {
-      await request(`${API}/usuarios/me/biblioteca/${libroId}`, {
-        method: 'DELETE'
-     });
-
-     await cargarMiBiblioteca();
-    } catch (err) {
-      alert('Error al eliminar libro: ' + err.message);
-      }
+      try { await request(`${API}/usuarios/me/biblioteca/${libroId}`, { method: 'DELETE' }); await cargarMiBiblioteca(); } catch (err) { alert('Error al eliminar libro: '+err.message); }
     }
 
     async function verDetalle(libroId) {
       try {
         const libro = await request(`${API}/libros/${libroId}`);
+        // Intentamos obtener contenido (si el backend expone /libros/{id}/contenido)
+        let contenido = '(Sin contenido)';
+        try { const c = await request(`${API}/libros/${libroId}/contenido`); contenido = c.contenido || '(Sin contenido)'; } catch(e) { /* backend puede devolver 404 si no existe endpoint */ }
+
         const reseñas = await request(`${API}/libros/${libroId}/reseñas`);
-        
         libroSeleccionado = libro;
         document.getElementById('tituloDetalle').textContent = libro.titulo;
         document.getElementById('autorDetalle').textContent = 'Autor: ' + libro.autor;
         document.getElementById('categoriaDetalle').textContent = 'Categoría: ' + libro.categoria;
-        
-        const lista = document.getElementById('listaReseñas');
-        lista.innerHTML = '';
-        reseñas.forEach(r => {
-          const li = document.createElement('li');
-          li.textContent = `Usuario ${r.usuario_id}: "${r.texto}" (⭐${r.cal})`;
-          lista.appendChild(li);
-        });
-        
+        document.getElementById('contenidoTexto').textContent = contenido;
+
+        // Mostrar área de edición solo a admin
+        if (userRole === 'admin') {
+          document.getElementById('edicionAdmin').classList.remove('hidden');
+          document.getElementById('contenidoEditar').value = contenido === '(Sin contenido)' ? '' : contenido;
+        } else {
+          document.getElementById('edicionAdmin').classList.add('hidden');
+        }
+
+        const lista = document.getElementById('listaReseñas'); lista.innerHTML = '';
+        reseñas.forEach(r => { const li = document.createElement('li'); li.textContent = `Usuario ${r.usuario_id}: "${r.texto}" (⭐${r.cal})`; lista.appendChild(li); });
         document.getElementById('detalleLibro').style.display = 'block';
-      } catch (err) {
-        alert('Error al cargar detalle: ' + err.message);
-      }
+      } catch (err) { alert('Error al cargar detalle: '+err.message); }
     }
 
     async function guardarReseña() {
       const texto = document.getElementById('reseñaTexto').value.trim();
       const cal = parseInt(document.getElementById('calificacion').value);
-      
-      if (!texto || !cal || cal < 1 || cal > 5) {
-        alert('Completa todos los campos correctamente');
-        return;
-      }
-      
-      try {
-        await request(`${API}/libros/${libroSeleccionado.id}/reseñas`, {
-          method: 'POST',
-          body: JSON.stringify({texto, cal})
-        });
-        
-        document.getElementById('reseñaTexto').value = '';
-        document.getElementById('calificacion').value = '';
-        alert('Reseña guardada ✅');
-        await verDetalle(libroSeleccionado.id);
-      } catch (err) {
-        alert('Error al guardar reseña: ' + err.message);
-      }
+      if (!texto || !cal || cal<1 || cal>5) { alert('Completa todos los campos correctamente'); return; }
+      try { await request(`${API}/libros/${libroSeleccionado.id}/reseñas`, { method: 'POST', body: JSON.stringify({ texto, cal }) }); document.getElementById('reseñaTexto').value=''; document.getElementById('calificacion').value=''; alert('Reseña guardada ✅'); await verDetalle(libroSeleccionado.id); } catch (err) { alert('Error al guardar reseña: '+err.message); }
     }
 
-    function cerrarDetalle() {
-      document.getElementById('detalleLibro').style.display = 'none';
-    }
+    function cerrarDetalle(){ document.getElementById('detalleLibro').style.display='none'; }
 
     async function editarLibro(libroId) {
       try {
         const libro = await request(`${API}/libros/${libroId}`);
-        
-        const nuevoTitulo = prompt('Nuevo título:', libro.titulo);
-        if (!nuevoTitulo) return;
-        
-        const nuevoAutor = prompt('Nuevo autor:', libro.autor);
-        if (!nuevoAutor) return;
-        
-        const nuevaCategoria = prompt('Nueva categoría:', libro.categoria);
-        if (!nuevaCategoria) return;
-        
-        await request(`${API}/libros/${libroId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            titulo: nuevoTitulo,
-            autor: nuevoAutor,
-            categoria: nuevaCategoria
-          })
-        });
-        
-        alert('✅ Libro actualizado exitosamente');
-        await cargarCatalogo();
-      } catch (err) {
-        alert('Error al editar libro: ' + err.message);
-      }
+        const nuevoTitulo = prompt('Nuevo título:', libro.titulo); if (!nuevoTitulo) return;
+        const nuevoAutor = prompt('Nuevo autor:', libro.autor); if (!nuevoAutor) return;
+        const nuevaCategoria = prompt('Nueva categoría:', libro.categoria); if (!nuevaCategoria) return;
+        await request(`${API}/libros/${libroId}`, { method: 'PUT', body: JSON.stringify({ titulo: nuevoTitulo, autor: nuevoAutor, categoria: nuevaCategoria }) });
+        alert('✅ Libro actualizado'); await cargarCatalogo();
+      } catch (err) { alert('Error al editar libro: '+err.message); }
+    }
+
+    async function guardarContenido() {
+      if (!userRole || userRole !== 'admin') { alert('Solo administradores pueden editar contenido'); return; }
+      const nuevo = document.getElementById('contenidoEditar').value;
+      try {
+        // Intentamos PUT a /libros/{id}/contenido (si el backend lo implementa)
+        await request(`${API}/libros/${libroSeleccionado.id}/contenido`, { method: 'PUT', body: JSON.stringify({ contenido: nuevo }) });
+        alert('Contenido actualizado ✅');
+        document.getElementById('contenidoTexto').textContent = nuevo;
+      } catch (err) { alert('Error al guardar contenido: '+err.message); }
     }
 
     async function eliminarLibro(libroId) {
-      if (!confirm('¿Estás seguro de que deseas eliminar este libro?')) {
-        return;
-      }
-      
-      try {
-        await request(`${API}/libros/${libroId}`, {
-          method: 'DELETE'
-        });
-        
-        alert('✅ Libro eliminado exitosamente');
-        await cargarCatalogo();
-      } catch (err) {
-        alert('Error al eliminar libro: ' + err.message);
-      }
+      if (!confirm('¿Estás seguro de eliminar este libro?')) return;
+      try { await request(`${API}/libros/${libroId}`, { method: 'DELETE' }); alert('✅ Libro eliminado'); await cargarCatalogo(); } catch (err) { alert('Error al eliminar libro: '+err.message); }
     }
+
+    // Auto-load: show login section initially
+    document.getElementById('login').style.display = 'block';
   </script>
 </body>
 </html>
-"""
 
 @app.get("/", response_class=HTMLResponse)
 def home():
@@ -725,8 +628,6 @@ def home():
 
 # ---------------------------
 # Endpoints usando la Facade
-# ---------------------------
-
 @app.get("/api/v1/libros", response_model=List[BookOut])
 def listar_libros(page: int = 1, limit: int = 20, categoria: Optional[str] = None, search: Optional[str] = None):
     items = facade.list_books(categoria=categoria, search=search)
@@ -737,7 +638,7 @@ def listar_libros(page: int = 1, limit: int = 20, categoria: Optional[str] = Non
 @app.post("/api/v1/libros", response_model=BookOut, status_code=status.HTTP_201_CREATED)
 def crear_libro(data: BookCreate, user=Depends(get_current_user)):
     admin_required(user)
-    book = facade.add_book(data.titulo, data.autor, data.categoria)
+    book = facade.add_book(data.titulo, data.autor, data.categoria, data.contenido or "")
     return book
 
 @app.get("/api/v1/libros/{libro_id}", response_model=BookOut)
@@ -750,7 +651,7 @@ def obtener_libro(libro_id: int):
 @app.put("/api/v1/libros/{libro_id}", response_model=BookOut)
 def actualizar_libro(libro_id: int, payload: BookUpdate, user=Depends(get_current_user)):
     admin_required(user)
-    changes = {"titulo": payload.titulo, "autor": payload.autor, "categoria": payload.categoria}
+    changes = {"titulo": payload.titulo, "autor": payload.autor, "categoria": payload.categoria, "contenido": payload.contenido}
     updated = facade.update_book(libro_id, changes)
     if not updated:
         raise HTTPException(status_code=404, detail="Libro no encontrado")
@@ -763,6 +664,25 @@ def eliminar_libro(libro_id: int, user=Depends(get_current_user)):
     if not ok:
         raise HTTPException(status_code=404, detail="Libro no encontrado")
     return None
+
+# Endpoints específicos para contenido (GET público, PUT admin)
+@app.get("/api/v1/libros/{libro_id}/contenido")
+def obtener_contenido(libro_id: int):
+    book = facade.get_book(libro_id)
+    if not book:
+        raise HTTPException(status_code=404, detail="Libro no encontrado")
+    return {"id": book["id"], "contenido": book.get("contenido", "")}
+
+class ContenidoUpdate(BaseModel):
+    contenido: str = Field(..., min_length=0)
+
+@app.put("/api/v1/libros/{libro_id}/contenido")
+def actualizar_contenido(libro_id: int, data: ContenidoUpdate, user=Depends(get_current_user)):
+    admin_required(user)
+    updated = facade.update_book(libro_id, {"contenido": data.contenido})
+    if not updated:
+        raise HTTPException(status_code=404, detail="Libro no encontrado")
+    return {"message": "Contenido actualizado", "libro": updated}
 
 # Reseñas
 @app.get("/api/v1/libros/{libro_id}/reseñas", response_model=List[ReviewOut])
@@ -838,3 +758,5 @@ if __name__ == "__main__":
     import uvicorn
     puerto = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=puerto)
+
+
