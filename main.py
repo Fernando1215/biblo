@@ -283,545 +283,463 @@ print("🟢 Usuario administrador creado por defecto -> admin@biblioteca.com / a
 HTML_PAGE = """<!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Biblioteca Personal</title>
-    <style>
-        :root {
-            --color-primary: #375a7f; /* Azul oscuro/Navy */
-            --color-secondary: #00bc8c; /* Turquesa */
-            --color-bg: #f5f7f9;
-            --color-paper: #ffffff;
-            --color-danger: #e74c3c;
-            --color-success: #00bc8c;
-            --color-warning: #f39c12;
-            --color-text: #34495e;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--color-bg);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-            padding-top: 40px;
-        }
-        .container {
-            background: var(--color-paper);
-            max-width: 800px;
-            width: 90%;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
-        h1, h2, h3 { color: var(--color-primary); border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
-        input, textarea {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 6px;
-            border: 1px solid #bdc3c7;
-            font-size: 16px;
-            box-sizing: border-box;
-            transition: border-color 0.3s;
-        }
-        input:focus, textarea:focus {
-            border-color: var(--color-secondary);
-            outline: none;
-        }
-        button {
-            padding: 12px 20px;
-            margin: 8px 0;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 16px;
-            transition: background-color 0.3s, opacity 0.3s;
-            color: white;
-            background-color: var(--color-secondary);
-        }
-        button:hover { opacity: 0.9; }
-
-        .btn-primary { background-color: var(--color-primary); }
-        .btn-danger { background-color: var(--color-danger); }
-        .btn-warning { background-color: var(--color-warning); }
-
-        #panelUsuario, #detalleLibro, #registro { display: none; margin-top: 20px; }
-        #cerrarSesion { max-width: 200px; margin: 20px auto; display: none; background-color: var(--color-danger); }
-
-        /* Estilo de elementos de lista (Libros) */
-        .libro-item {
-            padding: 15px;
-            margin: 10px 0;
-            background-color: #f8f8f8;
-            border-left: 5px solid var(--color-primary);
-            border-radius: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .libro-item:hover { background-color: #f1f1f1; cursor: pointer; }
-        .libro-info strong { color: var(--color-primary); }
-        
-        .btn-small {
-            width: auto;
-            padding: 8px 14px;
-            margin-left: 8px;
-            font-size: 14px;
-            border-radius: 4px;
-        }
-
-        /* Detalle del Libro */
-        #contenidoDetalle { 
-            border: 1px solid #ddd; 
-            padding: 15px; 
-            margin-bottom: 20px; 
-            max-height: 250px; 
-            overflow-y: auto; 
-            background-color: #fafafa; 
-            white-space: pre-wrap; 
-            border-radius: 6px;
-            color: var(--color-text);
-        }
-        #listaReseñas { list-style: none; padding: 0; }
-        #listaReseñas li { 
-            background: #ecf0f1; 
-            padding: 10px; 
-            margin-bottom: 5px; 
-            border-radius: 4px;
-            border-left: 3px solid var(--color-secondary);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Biblioteca Personal</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f5f1e9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      padding-top: 30px;
+    }
+    .container {
+      background: #fffdfa;
+      max-width: 700px;
+      width: 90%;
+      padding: 25px 35px;
+      border-radius: 12px;
+      box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    }
+    h1, h2, h3 { color: #3a4d24; }
+    input, textarea, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 2px solid #9caf88;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover { background-color: #388e3c; }
+    #panelUsuario, #detalleLibro, #registro { display: none; margin-top: 20px; }
+    .libro-item {
+      padding: 15px;
+      margin: 8px 0;
+      background-color: #e7ebd1;
+      border: 2px solid #b6c78a;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .libro-item:hover { background-color: #d4dbb4; }
+    .btn-small {
+      width: auto;
+      padding: 7px 12px;
+      margin-left: 5px;
+      font-size: 14px;
+    }
+    #cerrarSesion {
+      background-color: #a44c4c;
+      max-width: 150px;
+      margin: 20px auto;
+      display: none;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📚 Biblioteca Personal FastAPI</h1>
+  <div class="container">
+    <h1>📚 Biblioteca Personal</h1>
 
-        <div id="login">
-            <h2>Iniciar Sesión</h2>
-            <input type="email" id="loginEmail" placeholder="Email" />
-            <input type="password" id="loginClave" placeholder="Contraseña" />
-            <button onclick="login()" class="btn-primary">Ingresar</button>
-            <button onclick="mostrarRegistro()">Registrar Usuario</button>
-        </div>
+    <div id="login">
+      <h2>Iniciar Sesión</h2>
+      <input type="email" id="loginEmail" placeholder="Email" />
+      <input type="password" id="loginClave" placeholder="Contraseña" />
+      <button onclick="login()">Ingresar</button>
+      <button onclick="mostrarRegistro()">Registrar Usuario</button>
+    </div>
 
-        <div id="registro">
-            <h2>Registrar Usuario</h2>
-            <input type="text" id="regNombre" placeholder="Nombre" />
-            <input type="email" id="regEmail" placeholder="Email" />
-            <input type="password" id="regClave" placeholder="Contraseña (mín. 6 caracteres)" />
-            <button onclick="registrarUsuario()" class="btn-primary">Registrar</button>
-            <button onclick="volverLogin()">Volver</button>
-        </div>
+    <div id="registro">
+      <h2>Registrar Usuario</h2>
+      <input type="text" id="regNombre" placeholder="Nombre" />
+      <input type="email" id="regEmail" placeholder="Email" />
+      <input type="password" id="regClave" placeholder="Contraseña (mín. 6 caracteres)" />
+      <button onclick="registrarUsuario()">Registrar</button>
+      <button onclick="volverLogin()">Volver</button>
+    </div>
 
-        <div id="panelUsuario">
-            <h2>Catálogo Global</h2>
-            <div id="catalogoGlobal"></div>
+    <div id="panelUsuario">
+      <h2>Catálogo Global</h2>
+      <div id="catalogoGlobal"></div>
 
-            <h2 style="margin-top: 30px;">Mi Biblioteca Personal</h2>
-            <div id="miBiblioteca"></div>
+      <h2>Mi Biblioteca</h2>
+      <div id="miBiblioteca"></div>
 
-            <div id="panelAdminLibro">
-                <h2 style="margin-top: 30px;">✍️ Agregar Nuevo Libro (Solo Admin)</h2>
-                <input type="text" id="nuevoTitulo" placeholder="Título" />
-                <input type="text" id="nuevoAutor" placeholder="Autor" />
-                <input type="text" id="nuevaCategoria" placeholder="Categoría" />
-                <textarea id="nuevoContenido" placeholder="Contenido del libro (mín. 10 caracteres)"></textarea>
-                <button onclick="agregarLibro()" class="btn-secondary">Agregar Libro</button>
-            </div>
-        </div>
+      <h2>Agregar Nuevo Libro</h2>
+      <input type="text" id="nuevoTitulo" placeholder="Título" />
+      <input type="text" id="nuevoAutor" placeholder="Autor" />
+      <input type="text" id="nuevaCategoria" placeholder="Categoría" />
+            <textarea id="nuevoContenido" placeholder="Contenido del libro (mín. 10 caracteres)"></textarea>
+      <button onclick="agregarLibro()">Agregar Libro</button>
+    </div>
 
-        <div id="detalleLibro">
-            <h3 id="tituloDetalle"></h3>
-            <p id="autorDetalle"></p>
-            <p id="categoriaDetalle"></p>
-            
-            <h4>Contenido:</h4>
-            <div id="contenidoDetalle"></div>
-            
-            <h4 style="margin-top: 20px;">Dejar Reseña:</h4>
-            <textarea id="reseñaTexto" placeholder="Escribe tu reseña..." rows="3"></textarea>
-            <input type="number" id="calificacion" min="1" max="5" placeholder="Calificación (1-5)" />
-            <button onclick="guardarReseña()" class="btn-primary">Guardar Reseña</button>
-            
-            <h4>Comentarios y Reseñas:</h4>
-            <ul id="listaReseñas"></ul>
-            
-            <button onclick="cerrarDetalle()" class="btn-primary" style="margin-top: 20px;">← Volver al Catálogo</button>
-        </div>
+    <div id="detalleLibro">
+      <h3 id="tituloDetalle"></h3>
+      <p id="autorDetalle"></p>
+      <p id="categoriaDetalle"></p>
+      
+            <h4>Contenido:</h4>
+      <div id="contenidoDetalle" style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px; max-height: 200px; overflow-y: auto; background-color: #f9f9f9; white-space: pre-wrap;"></div>
+      
+      <textarea id="reseñaTexto" placeholder="Escribe tu reseña..."></textarea>
+      <input type="number" id="calificacion" min="1" max="5" placeholder="Calificación (1-5)" />
+      <button onclick="guardarReseña()">Guardar Reseña</button>
+      <h4>Reseñas:</h4>
+      <ul id="listaReseñas"></ul>
+      <button onclick="cerrarDetalle()">Cerrar</button>
+    </div>
 
-        <button id="cerrarSesion" onclick="logout()">Cerrar Sesión</button>
-    </div>
+    <button id="cerrarSesion" onclick="logout()">Cerrar Sesión</button>
+  </div>
 
-    <script>
-        let token = null;
-        let userRole = null;
-        let libroSeleccionado = null;
-        const API = '/api/v1';
+  <script>
+    let token = null;
+    let userRole = null;  // ← Guardamos el rol del usuario
+    let libroSeleccionado = null;
+    let misBibliotecaIds = [];
 
-        // ----------------------------------------------------
-        // 1. UTILIDAD DE PETICIONES (fetch)
-        // ----------------------------------------------------
+    const API = '/api/v1';
 
-        async function request(url, options = {}) {
-            options.headers = options.headers || {};
-            options.headers['Content-Type'] = 'application/json';
-            
-            if (token) {
-                options.headers['Authorization'] = `Bearer ${token}`;
-            }
-            
-            const res = await fetch(url, options);
+    async function request(url, options = {}) {
+      if (token && !options.headers) {
+        options.headers = {};
+      }
+      if (token) {
+        options.headers['Authorization'] = `Bearer ${token}`;
+      }
+      options.headers = options.headers || {};
+      options.headers['Content-Type'] = 'application/json';
+      
+      const res = await fetch(url, options);
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({detail: 'Error desconocido'}));
+        throw new Error(error.detail || 'Error en la petición');
+      }
+      return res.status === 204 ? null : res.json();
+    }
 
-            if (!res.ok) {
-                const error = await res.json().catch(() => ({detail: 'Error desconocido'}));
-                // Lanzar un error con el detalle del API
-                throw new Error(error.detail || `Error ${res.status}: Falló la petición a ${url}`);
-            }
-            // 204 No Content devuelve null
-            return res.status === 204 ? null : res.json();
-        }
+    async function login() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const clave = document.getElementById('loginClave').value;
+      
+      try {
+        const data = await request(`${API}/auth/login`, {
+          method: 'POST',
+          body: JSON.stringify({email, clave})
+        });
+        
+        token = data.token;
+        userRole = data.rol;  // ← Guardamos el rol
+        
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('panelUsuario').style.display = 'block';
+        document.getElementById('cerrarSesion').style.display = 'block';
+        
+        // Mostrar u ocultar sección de agregar libros según el rol
+        // 🆕 Añadir #nuevoContenido
+        const adminElements = document.querySelectorAll('#panelUsuario > h2:nth-of-type(3), #nuevoTitulo, #nuevoAutor, #nuevaCategoria, #nuevoContenido, #panelUsuario > button:last-of-type');
+        if (userRole === 'admin') {
+          adminElements.forEach(el => el.style.display = 'block');
+          alert('✅ Bienvenido Administrador');
+        } else {
+          // Ocultar formulario de agregar libros para usuarios normales
+          adminElements.forEach(el => {
+            el.style.display = 'none';
+          });
+          alert('✅ Bienvenido Usuario');
+        }
+        
+        await cargarCatalogo();
+        await cargarMiBiblioteca();
+      } catch (err) {
+        alert('Error al iniciar sesión: ' + err.message);
+      }
+    }
 
-        // ----------------------------------------------------
-        // 2. AUTENTICACIÓN Y REGISTRO
-        // ----------------------------------------------------
+    function mostrarRegistro() {
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('registro').style.display = 'block';
+    }
 
-        async function login() {
-            const email = document.getElementById('loginEmail').value.trim();
-            const clave = document.getElementById('loginClave').value;
-            
-            try {
-                const data = await request(`${API}/auth/login`, {
-                    method: 'POST',
-                    body: JSON.stringify({email, clave})
-                });
-                
-                token = data.token;
-                userRole = data.rol;
-                
-                document.getElementById('login').style.display = 'none';
-                document.getElementById('panelUsuario').style.display = 'block';
-                document.getElementById('cerrarSesion').style.display = 'block';
-                
-                // Mostrar/ocultar panel de administración
-                document.getElementById('panelAdminLibro').style.display = userRole === 'admin' ? 'block' : 'none';
-                
-                alert(`✅ Bienvenido ${userRole.toUpperCase()}`);
-                
-                await cargarCatalogo();
-                await cargarMiBiblioteca();
-            } catch (err) {
-                alert('🚫 Error al iniciar sesión: ' + err.message);
-            }
-        }
+    function volverLogin() {
+      document.getElementById('registro').style.display = 'none';
+      document.getElementById('login').style.display = 'block';
+    }
 
-        function mostrarRegistro() {
-            document.getElementById('login').style.display = 'none';
-            document.getElementById('registro').style.display = 'block';
-        }
+    async function registrarUsuario() {
+      const nombre = document.getElementById('regNombre').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const clave = document.getElementById('regClave').value;
+      
+      try {
+        await request(`${API}/usuarios`, {
+          method: 'POST',
+          body: JSON.stringify({nombre, email, clave, rol: 'usuario'})
+        });
+        
+        alert('Usuario registrado exitosamente');
+        volverLogin();
+      } catch (err) {
+        alert('Error al registrar: ' + err.message);
+      }
+    }
 
-        function volverLogin() {
-            document.getElementById('registro').style.display = 'none';
-            document.getElementById('login').style.display = 'block';
-        }
+    function logout() {
+      token = null;
+      userRole = null;  // ← Limpiar rol
+      document.getElementById('login').style.display = 'block';
+      document.getElementById('panelUsuario').style.display = 'none';
+      document.getElementById('cerrarSesion').style.display = 'none';
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginClave').value = '';
+      
+      // Mostrar de nuevo el formulario de agregar libros (para próximo login)
+      // 🆕 Añadir #nuevoContenido
+      document.querySelectorAll('#panelUsuario > h2:nth-of-type(3), #nuevoTitulo, #nuevoAutor, #nuevaCategoria, #nuevoContenido, #panelUsuario > button:last-of-type').forEach(el => {
+        el.style.display = 'block';
+      });
+    }
 
-        async function registrarUsuario() {
-            const nombre = document.getElementById('regNombre').value.trim();
-            const email = document.getElementById('regEmail').value.trim();
-            const clave = document.getElementById('regClave').value;
-            
-            if (clave.length < 6) {
-                alert('La contraseña debe tener al menos 6 caracteres.');
-                return;
-            }
+    async function cargarCatalogo() {
+      try {
+        const libros = await request(`${API}/libros`);
+        const cont = document.getElementById('catalogoGlobal');
+        cont.innerHTML = '';
+        
+        libros.forEach(libro => {
+          const div = document.createElement('div');
+          div.className = 'libro-item';
+          
+          // Botones según el rol del usuario
+          let botonesHTML = `
+            <button class="btn-small" onclick="agregarAMiBiblioteca(${libro.id})">Agregar</button>
+            <button class="btn-small" onclick="verDetalle(${libro.id})">Ver</button>
+          `;
+          
+          // Solo admin puede editar y eliminar
+          if (userRole === 'admin') {
+            botonesHTML += `
+              <button class="btn-small" onclick="editarLibro(${libro.id})" style="background-color: #ff9800;">Editar</button>
+              <button class="btn-small" onclick="eliminarLibro(${libro.id})" style="background-color: #f44336;">Eliminar</button>
+            `;
+          }
+          
+          div.innerHTML = `
+            <div><strong>${libro.titulo}</strong> - ${libro.autor} (${libro.categoria})</div>
+            <div>${botonesHTML}</div>
+          `;
+          cont.appendChild(div);
+        });
+      } catch (err) {
+        alert('Error al cargar catálogo: ' + err.message);
+      }
+    }
 
-            try {
-                await request(`${API}/usuarios`, {
-                    method: 'POST',
-                    body: JSON.stringify({nombre, email, clave, rol: 'usuario'})
-                });
-                
-                alert('✅ Usuario registrado exitosamente. Ahora puedes iniciar sesión.');
-                volverLogin();
-            } catch (err) {
-                alert('🚫 Error al registrar: ' + err.message);
-            }
-        }
+    async function cargarMiBiblioteca() {
+      try {
+        const libros = await request(`${API}/usuarios/me/biblioteca`);
+        const cont = document.getElementById('miBiblioteca');
+        cont.innerHTML = '';
+        
+        if (libros.length === 0) {
+          cont.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">📚 Tu biblioteca está vacía. Agrega libros desde el catálogo global.</p>';
+          return;
+        }
+        
+        libros.forEach(libro => {
+          const div = document.createElement('div');
+          div.className = 'libro-item';
+          div.innerHTML = `
+            <div><strong>${libro.titulo}</strong> - ${libro.autor} (${libro.categoria})</div>
+            <div>
+              <button class="btn-small" onclick="verDetalle(${libro.id})">Ver detalle</button>
+              <button class="btn-small" onclick="quitarDeMiBiblioteca(${libro.id})" style="background-color: #f44336;">Quitar</button>
+            </div>
+          `;
+          cont.appendChild(div);
+        });
+      } catch (err) {
+        const cont = document.getElementById('miBiblioteca');
+        cont.innerHTML = '<p style="color: #f44336;">Error al cargar tu biblioteca: ' + err.message + '</p>';
+      }
+    }
 
-        function logout() {
-            token = null;
-            userRole = null;
-            libroSeleccionado = null;
-            
-            document.getElementById('login').style.display = 'block';
-            document.getElementById('panelUsuario').style.display = 'none';
-            document.getElementById('cerrarSesion').style.display = 'none';
-            document.getElementById('loginEmail').value = '';
-            document.getElementById('loginClave').value = '';
-        }
+    async function agregarLibro() {
+      const titulo = document.getElementById('nuevoTitulo').value.trim();
+      const autor = document.getElementById('nuevoAutor').value.trim();
+      const categoria = document.getElementById('nuevaCategoria').value.trim();
+      const contenido = document.getElementById('nuevoContenido').value;  // 🆕 Obtener contenido
+      
+      if (!titulo || !autor || !categoria || !contenido) {  // 🆕 Validar contenido
+        alert('Completa todos los campos');
+        return;
+      }
+      
+      try {
+        await request(`${API}/libros`, {
+          method: 'POST',
+          body: JSON.stringify({titulo, autor, categoria, contenido})  // 🆕 Enviar contenido
+        });
+        
+        document.getElementById('nuevoTitulo').value = '';
+        document.getElementById('nuevoAutor').value = '';
+        document.getElementById('nuevaCategoria').value = '';
+        document.getElementById('nuevoContenido').value = '';  // 🆕 Limpiar contenido
+        
+        await cargarCatalogo();
+      } catch (err) {
+        if (err.message.includes('Solo administradores')) {
+          alert('❌ Solo los administradores pueden crear libros');
+        } else {
+          alert('Error al agregar libro: ' + err.message);
+        }
+      }
+    }
 
-        // ----------------------------------------------------
-        // 3. VISTAS Y CATÁLOGO
-        // ----------------------------------------------------
+    async function agregarAMiBiblioteca(libroId) {
+      try {
+        await request(`${API}/usuarios/me/biblioteca/${libroId}`, {
+          method: 'POST'
+        });
+        alert('Libro agregado a tu biblioteca');
+        await cargarMiBiblioteca();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+    async function quitarDeMiBiblioteca(libroId) {
+      if (!confirm('¿Seguro que deseas quitar este libro de tu biblioteca?')) return;
 
-        async function cargarCatalogo() {
-            try {
-                const libros = await request(`${API}/libros`);
-                const cont = document.getElementById('catalogoGlobal');
-                cont.innerHTML = '';
-                
-                if (libros.length === 0) {
-                    cont.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No hay libros en el catálogo.</p>';
-                    return;
-                }
+    try {
+      await request(`${API}/usuarios/me/biblioteca/${libroId}`, {
+        method: 'DELETE'
+     });
 
-                libros.forEach(libro => {
-                    const div = document.createElement('div');
-                    div.className = 'libro-item';
-                    
-                    let botonesHTML = `
-                        <button class="btn-small btn-secondary" onclick="event.stopPropagation(); agregarAMiBiblioteca(${libro.id})">Añadir</button>
-                    `;
-                    
-                    if (userRole === 'admin') {
-                        botonesHTML += `
-                            <button class="btn-small btn-warning" onclick="event.stopPropagation(); editarLibro(${libro.id})">Editar</button>
-                            <button class="btn-small btn-danger" onclick="event.stopPropagation(); eliminarLibro(${libro.id})">Eliminar</button>
-                        `;
-                    }
-                    
-                    div.innerHTML = `
-                        <div class="libro-info">
-                            <strong>${libro.titulo}</strong> - ${libro.autor} (${libro.categoria})
-                        </div>
-                        <div>
-                            <button class="btn-small btn-primary" onclick="event.stopPropagation(); verDetalle(${libro.id})">Ver</button>
-                            ${botonesHTML}
-                        </div>
-                    `;
-                    // Añadir evento al div para ver detalle si no es admin (o si lo es y no clickea los botones)
-                    div.onclick = () => verDetalle(libro.id);
-                    cont.appendChild(div);
-                });
-            } catch (err) {
-                document.getElementById('catalogoGlobal').innerHTML = `<p style="color: var(--color-danger);">🚫 Error al cargar catálogo: ${err.message}</p>`;
-            }
-        }
+     await cargarMiBiblioteca();
+    } catch (err) {
+      alert('Error al eliminar libro: ' + err.message);
+      }
+    }
 
-        async function cargarMiBiblioteca() {
-            try {
-                const libros = await request(`${API}/usuarios/me/biblioteca`);
-                const cont = document.getElementById('miBiblioteca');
-                cont.innerHTML = '';
-                
-                if (libros.length === 0) {
-                    cont.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">📚 Tu biblioteca está vacía. Agrega libros desde el catálogo global.</p>';
-                    return;
-                }
-                
-                libros.forEach(libro => {
-                    const div = document.createElement('div');
-                    div.className = 'libro-item';
-                    div.innerHTML = `
-                        <div class="libro-info">
-                            <strong>${libro.titulo}</strong> - ${libro.autor} (${libro.categoria})
-                        </div>
-                        <div>
-                            <button class="btn-small btn-primary" onclick="event.stopPropagation(); verDetalle(${libro.id})">Ver detalle</button>
-                            <button class="btn-small btn-danger" onclick="event.stopPropagation(); quitarDeMiBiblioteca(${libro.id})">Quitar</button>
-                        </div>
-                    `;
-                    cont.appendChild(div);
-                });
-            } catch (err) {
-                document.getElementById('miBiblioteca').innerHTML = `<p style="color: var(--color-danger);">🚫 Error al cargar tu biblioteca: ${err.message}</p>`;
-            }
-        }
-        
-        // ----------------------------------------------------
-        // 4. ACCIONES DE LIBROS (Admin/Usuario)
-        // ----------------------------------------------------
+    async function verDetalle(libroId) {
+      try {
+        const libro = await request(`${API}/libros/${libroId}`);
+        const reseñas = await request(`${API}/libros/${libroId}/reseñas`);
+        
+        libroSeleccionado = libro;
+        document.getElementById('tituloDetalle').textContent = libro.titulo;
+        document.getElementById('autorDetalle').textContent = 'Autor: ' + libro.autor;
+        document.getElementById('categoriaDetalle').textContent = 'Categoría: ' + libro.categoria;
+        
+        // 🆕 Mostrar el contenido
+        document.getElementById('contenidoDetalle').textContent = libro.contenido;
 
-        async function agregarLibro() {
-            const titulo = document.getElementById('nuevoTitulo').value.trim();
-            const autor = document.getElementById('nuevoAutor').value.trim();
-            const categoria = document.getElementById('nuevaCategoria').value.trim();
-            const contenido = document.getElementById('nuevoContenido').value;
-            
-            if (!titulo || !autor || !categoria || contenido.length < 10) {
-                alert('Completa todos los campos y asegúrate de que el contenido tenga al menos 10 caracteres.');
-                return;
-            }
-            
-            try {
-                await request(`${API}/libros`, {
-                    method: 'POST',
-                    body: JSON.stringify({titulo, autor, categoria, contenido})
-                });
-                
-                alert('✅ Libro agregado exitosamente');
-                
-                document.getElementById('nuevoTitulo').value = '';
-                document.getElementById('nuevoAutor').value = '';
-                document.getElementById('nuevaCategoria').value = '';
-                document.getElementById('nuevoContenido').value = '';
-                
-                await cargarCatalogo();
-            } catch (err) {
-                alert('🚫 Error al agregar libro: ' + err.message);
-            }
-        }
+        const lista = document.getElementById('listaReseñas');
+        lista.innerHTML = '';
+        reseñas.forEach(r => {
+          const li = document.createElement('li');
+          li.textContent = `Usuario ${r.usuario_id}: "${r.texto}" (⭐${r.cal})`;
+          lista.appendChild(li);
+        });
+        
+        document.getElementById('panelUsuario').style.display = 'none';
+        document.getElementById('detalleLibro').style.display = 'block';
+      } catch (err) {
+        alert('Error al cargar detalle: ' + err.message);
+      }
+    }
 
-        async function editarLibro(libroId) {
-            try {
-                const libro = await request(`${API}/libros/${libroId}`);
-                
-                const nuevoTitulo = prompt('Nuevo título:', libro.titulo);
-                if (nuevoTitulo === null) return;
-                
-                const nuevoAutor = prompt('Nuevo autor:', libro.autor);
-                if (nuevoAutor === null) return;
-                
-                const nuevaCategoria = prompt('Nueva categoría:', libro.categoria);
-                if (nuevaCategoria === null) return;
+    async function guardarReseña() {
+      const texto = document.getElementById('reseñaTexto').value.trim();
+      const cal = parseInt(document.getElementById('calificacion').value);
+      
+      if (!texto || !cal || cal < 1 || cal > 5) {
+        alert('Completa todos los campos correctamente');
+        return;
+      }
+      
+      try {
+        await request(`${API}/libros/${libroSeleccionado.id}/reseñas`, {
+          method: 'POST',
+          body: JSON.stringify({texto, cal})
+        });
+        
+        document.getElementById('reseñaTexto').value = '';
+        document.getElementById('calificacion').value = '';
+        alert('Reseña guardada ✅');
+        await verDetalle(libroSeleccionado.id);
+      } catch (err) {
+        alert('Error al guardar reseña: ' + err.message);
+      }
+    }
 
-                const nuevoContenido = prompt('Nuevo contenido:', libro.contenido);
-                if (nuevoContenido === null) return;
-                
-                await request(`${API}/libros/${libroId}`, {
-                    method: 'PUT',
-                    body: JSON.stringify({
-                        titulo: nuevoTitulo,
-                        autor: nuevoAutor,
-                        categoria: nuevaCategoria,
-                        contenido: nuevoContenido
-                    })
-                });
-                
-                alert('✅ Libro actualizado exitosamente');
-                await cargarCatalogo();
-            } catch (err) {
-                alert('🚫 Error al editar libro: ' + err.message);
-            }
-        }
+    function cerrarDetalle() {
+      document.getElementById('detalleLibro').style.display = 'none';
+      document.getElementById('panelUsuario').style.display = 'block';
+    }
 
-        async function eliminarLibro(libroId) {
-            if (userRole !== 'admin') return;
-            if (!confirm('¿Estás seguro de que deseas eliminar este libro? Esta acción es irreversible.')) {
-                return;
-            }
-            
-            try {
-                await request(`${API}/libros/${libroId}`, {
-                    method: 'DELETE'
-                });
-                
-                alert('✅ Libro eliminado exitosamente');
-                await cargarCatalogo();
-                await cargarMiBiblioteca(); // Revisa si estaba en la biblioteca
-            } catch (err) {
-                alert('🚫 Error al eliminar libro: ' + err.message);
-            }
-        }
+    async function editarLibro(libroId) {
+      try {
+        const libro = await request(`${API}/libros/${libroId}`);
+        
+        const nuevoTitulo = prompt('Nuevo título:', libro.titulo);
+        if (!nuevoTitulo) return;
+        
+        const nuevoAutor = prompt('Nuevo autor:', libro.autor);
+        if (!nuevoAutor) return;
+        
+        const nuevaCategoria = prompt('Nueva categoría:', libro.categoria);
+        if (!nuevaCategoria) return;
 
-        async function agregarAMiBiblioteca(libroId) {
-            try {
-                await request(`${API}/usuarios/me/biblioteca/${libroId}`, {
-                    method: 'POST'
-                });
-                alert('✅ Libro agregado a tu biblioteca');
-                await cargarMiBiblioteca();
-            } catch (err) {
-                alert('🚫 Error: ' + err.message);
-            }
-        }
-        
-        async function quitarDeMiBiblioteca(libroId) {
-            if (!confirm('¿Seguro que deseas quitar este libro de tu biblioteca?')) return;
+        const nuevoContenido = prompt('Nuevo contenido:', libro.contenido);  // 🆕 Prompt para contenido
+        if (!nuevoContenido) return;
+        
+        await request(`${API}/libros/${libroId}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            titulo: nuevoTitulo,
+            autor: nuevoAutor,
+            categoria: nuevaCategoria,
+            contenido: nuevoContenido  // 🆕 Enviar contenido
+          })
+        });
+        
+        alert('✅ Libro actualizado exitosamente');
+        await cargarCatalogo();
+      } catch (err) {
+        alert('Error al editar libro: ' + err.message);
+      }
+    }
 
-            try {
-                await request(`${API}/usuarios/me/biblioteca/${libroId}`, {
-                    method: 'DELETE'
-                });
-                alert('✅ Libro quitado de tu biblioteca');
-                await cargarMiBiblioteca();
-            } catch (err) {
-                alert('🚫 Error al eliminar libro: ' + err.message);
-            }
-        }
-
-        // ----------------------------------------------------
-        // 5. DETALLE Y RESEÑAS
-        // ----------------------------------------------------
-
-        async function verDetalle(libroId) {
-            try {
-                const [libro, reseñas] = await Promise.all([
-                    request(`${API}/libros/${libroId}`),
-                    request(`${API}/libros/${libroId}/reseñas`)
-                ]);
-                
-                libroSeleccionado = libro;
-                document.getElementById('tituloDetalle').textContent = libro.titulo;
-                document.getElementById('autorDetalle').textContent = 'Autor: ' + libro.autor;
-                document.getElementById('categoriaDetalle').textContent = 'Categoría: ' + libro.categoria;
-                document.getElementById('contenidoDetalle').textContent = libro.contenido;
-
-                const lista = document.getElementById('listaReseñas');
-                lista.innerHTML = '';
-                
-                if (reseñas.length === 0) {
-                    lista.innerHTML = '<p style="color: #666;">Aún no hay reseñas para este libro.</p>';
-                } else {
-                    reseñas.forEach(r => {
-                        const li = document.createElement('li');
-                        li.textContent = `Usuario ${r.usuario_id}: "${r.texto}" (⭐${r.cal}/5)`;
-                        lista.appendChild(li);
-                    });
-                }
-                
-                document.getElementById('panelUsuario').style.display = 'none';
-                document.getElementById('detalleLibro').style.display = 'block';
-            } catch (err) {
-                alert('🚫 Error al cargar detalle: ' + err.message);
-                cerrarDetalle();
-            }
-        }
-
-        async function guardarReseña() {
-            const texto = document.getElementById('reseñaTexto').value.trim();
-            const calInput = document.getElementById('calificacion');
-            const cal = parseInt(calInput.value);
-            
-            if (!texto || !cal || cal < 1 || cal > 5) {
-                alert('Completa la reseña y asegúrate que la calificación esté entre 1 y 5.');
-                return;
-            }
-            
-            try {
-                await request(`${API}/libros/${libroSeleccionado.id}/reseñas`, {
-                    method: 'POST',
-                    body: JSON.stringify({texto, cal})
-                });
-                
-                document.getElementById('reseñaTexto').value = '';
-                calInput.value = '';
-                alert('✅ Reseña guardada');
-                // Recargar reseñas
-                await verDetalle(libroSeleccionado.id);
-            } catch (err) {
-                alert('🚫 Error al guardar reseña: ' + err.message);
-            }
-        }
-
-        function cerrarDetalle() {
-            document.getElementById('detalleLibro').style.display = 'none';
-            document.getElementById('panelUsuario').style.display = 'block';
-        }
-    </script>
+    async function eliminarLibro(libroId) {
+      if (!confirm('¿Estás seguro de que deseas eliminar este libro?')) {
+        return;
+      }
+      
+      try {
+        await request(`${API}/libros/${libroId}`, {
+          method: 'DELETE'
+        });
+        
+        alert('✅ Libro eliminado exitosamente');
+        await cargarCatalogo();
+      } catch (err) {
+        alert('Error al eliminar libro: ' + err.message);
+      }
+    }
+  </script>
 </body>
 </html>
 """
